@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 
 setup(
-    name="sonoran-py",
+    name="Sonoran.py",
     version="0.1.0",
     description="Python SDK for Sonoran CAD integrations",
     long_description=open("README.md", "r").read(),

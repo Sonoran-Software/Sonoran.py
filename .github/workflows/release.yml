@@ -1,0 +1,100 @@
+name: release
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build tools
+        run: python -m pip install --upgrade pip build
+
+      - name: Run tests
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests
+
+      - name: Determine next version
+        id: version
+        shell: bash
+        run: |
+          latest_tag="$(git tag --list 'v*' --sort=-version:refname | head -n 1)"
+          if [ -z "$latest_tag" ]; then
+            version="0.1.0"
+          else
+            version="${latest_tag#v}"
+            IFS='.' read -r major minor patch <<< "$version"
+            patch=$((patch + 1))
+            version="${major}.${minor}.${patch}"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Apply release version
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          python - <<'PY'
+          import os
+          import pathlib
+          import re
+
+          version = os.environ["RELEASE_VERSION"]
+          files = [pathlib.Path("pyproject.toml"), pathlib.Path("setup.py")]
+
+          for path in files:
+              content = path.read_text(encoding="utf-8")
+              updated = re.sub(
+                  r'(?m)^version = ".*"$',
+                  f'version = "{version}"',
+                  content,
+              )
+              updated = re.sub(
+                  r'(?m)^    version=".*",$',
+                  f'    version="{version}",',
+                  updated,
+              )
+              path.write_text(updated, encoding="utf-8")
+          PY
+
+      - name: Build distributions
+        run: python -m build
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+      - name: Create Git tag
+        env:
+          TAG_NAME: ${{ steps.version.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "$TAG_NAME"
+          git push origin "$TAG_NAME"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            dist/*

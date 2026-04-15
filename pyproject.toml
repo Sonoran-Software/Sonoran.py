@@ -3,14 +3,18 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "sonoran-py"
+name = "Sonoran.py"
 version = "0.1.0"
 description = "Python SDK for Sonoran CAD integrations"
 readme = "README.md"
 requires-python = ">=3.7"
-license = { text = "ISC" }
+license = "ISC"
 authors = [{ name = "Sonoran Software" }]
 dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/Sonoran-Software/Sonoran.py"
+Repository = "https://github.com/Sonoran-Software/Sonoran.py"
 
 [tool.setuptools]
 package-dir = { "" = "src" }

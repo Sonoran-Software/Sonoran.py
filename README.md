@@ -7,7 +7,7 @@ This repository currently focuses on the CAD v2 API surface and mirrors the publ
 ## Install
 
 ```sh
-pip install git+https://github.com/Sonoran-Software/Sonoran.py.git
+pip install Sonoran.py
 ```
 
 ## Example Usage
@@ -44,3 +44,4 @@ else:
 - Only CAD v2 helpers are included right now.
 - Helper names match `Sonoran.js`.
 - CAD v2 requests automatically retry `429` responses up to 2 times and respect `Retry-After` when it is provided.
+- The import package remains `sonoran`.
