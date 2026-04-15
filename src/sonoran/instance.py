@@ -2,6 +2,7 @@ from __future__ import print_function
 
 from .constants import productEnums
 from .managers.cad import CADManager
+from .managers.radio import RadioManager
 
 
 class Instance(object):
@@ -24,6 +25,7 @@ class Instance(object):
         self.radioCommunityId = None
         self.radioApiKey = None
         self.radioApiUrl = "https://api.sonoranradio.com"
+        self.radioDefaultServerId = 1
         self.isRadioSuccessful = False
 
         self.debug = bool(merged.get("debug", False))
@@ -46,8 +48,15 @@ class Instance(object):
                     self.cadDefaultServerId = int(merged["serverId"])
                 if isinstance(merged.get("cadApiUrl"), str):
                     self.cadApiUrl = merged["cadApiUrl"]
+            elif product == productEnums.RADIO:
+                self.radioCommunityId = merged["communityId"]
+                self.radioApiKey = merged["apiKey"]
+                if merged.get("serverId") is not None:
+                    self.radioDefaultServerId = int(merged["serverId"])
+                if isinstance(merged.get("radioApiUrl"), str):
+                    self.radioApiUrl = merged["radioApiUrl"]
             else:
-                raise ValueError("Only productEnums.CAD is currently supported in Sonoran.py.")
+                raise ValueError("Only productEnums.CAD and productEnums.RADIO are currently supported in Sonoran.py.")
         else:
             self.cadCommunityId = merged.get("cadCommunityId")
             self.cadApiKey = merged.get("cadApiKey")
@@ -55,6 +64,10 @@ class Instance(object):
             self.cmsApiKey = merged.get("cmsApiKey")
             self.radioCommunityId = merged.get("radioCommunityId")
             self.radioApiKey = merged.get("radioApiKey")
+            if merged.get("radioDefaultServerId") is not None:
+                self.radioDefaultServerId = int(merged["radioDefaultServerId"])
+            if isinstance(merged.get("radioApiUrl"), str):
+                self.radioApiUrl = merged["radioApiUrl"]
 
             if merged.get("cadDefaultServerId") is not None:
                 self.cadDefaultServerId = int(merged["cadDefaultServerId"])
@@ -67,6 +80,9 @@ class Instance(object):
         if self.cadCommunityId and self.cadApiKey and self.cadApiUrl:
             self.cad = CADManager(self)
             self.isCADSuccessful = True
+        if self.radioCommunityId and self.radioApiKey and self.radioApiUrl:
+            self.radio = RadioManager(self)
+            self.isRadioSuccessful = True
 
     def _debugLog(self, message):
         if self.debug:

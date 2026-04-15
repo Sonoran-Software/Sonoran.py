@@ -173,5 +173,60 @@ class CADV2Tests(unittest.TestCase):
         self.assertIsNone(response.data)
 
 
+class RadioV2Tests(unittest.TestCase):
+    def setUp(self):
+        self.instance = Instance(
+            apiKey="radio-key",
+            communityId="radio-community",
+            product=productEnums.RADIO,
+            serverId=4,
+        )
+        self.assertIsNotNone(self.instance.radio)
+        self.radio = self.instance.radio
+
+    def test_get_connected_users_v2_uses_server_path(self):
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["url"] = request.full_url
+            captured["headers"] = dict(request.header_items())
+            return FakeResponse({"connectedUsers": []})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            response = self.radio.getConnectedUsersV2()
+
+        self.assertTrue(response.success)
+        self.assertEqual(
+            captured["url"],
+            "https://api.sonoranradio.com/v2/servers/4/connected-users",
+        )
+        self.assertEqual(captured["headers"]["Authorization"], "Bearer radio-key")
+
+    def test_set_server_ip_v2_strips_server_id_from_body(self):
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["url"] = request.full_url
+            captured["body"] = json.loads(request.data.decode("utf-8"))
+            return FakeResponse({"roomId": 2})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            response = self.radio.setServerIpV2(
+                {
+                    "serverId": 8,
+                    "roomId": 2,
+                    "serverPort": 30120,
+                    "pushUrl": "http://127.0.0.1:30120/sonoranradio",
+                }
+            )
+
+        self.assertTrue(response.success)
+        self.assertEqual(
+            captured["url"],
+            "https://api.sonoranradio.com/v2/servers/8/server-ip",
+        )
+        self.assertNotIn("serverId", captured["body"])
+
+
 if __name__ == "__main__":
     unittest.main()
