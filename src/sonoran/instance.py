@@ -2,6 +2,7 @@ from __future__ import print_function
 
 from .constants import productEnums
 from .managers.cad import CADManager
+from .managers.cms import CMSManager
 from .managers.radio import RadioManager
 
 
@@ -80,6 +81,9 @@ class Instance(object):
         if self.cadCommunityId and self.cadApiKey and self.cadApiUrl:
             self.cad = CADManager(self)
             self.isCADSuccessful = True
+        if self.cmsCommunityId and self.cmsApiKey and self.cmsApiUrl:
+            self.cms = CMSManager(self)
+            self.isCMSSuccessful = True
         if self.radioCommunityId and self.radioApiKey and self.radioApiUrl:
             self.radio = RadioManager(self)
             self.isRadioSuccessful = True
