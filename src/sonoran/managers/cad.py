@@ -221,6 +221,9 @@ class CADManager(object):
     def getVersionV2(self):
         return self._execute_cad_v2_request("GET", "v2/general/version")
 
+    def getTurnCredentialsV2(self, query=None):
+        return self._execute_cad_v2_request("GET", "v2/general/turn", query=dict(query or {}))
+
     def getServersV2(self):
         return self._execute_cad_v2_request("GET", "v2/general/servers")
 

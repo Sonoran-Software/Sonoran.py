@@ -75,6 +75,22 @@ class CADV2Tests(unittest.TestCase):
             "https://api.sonorancad.com/v2/emergency/servers/5/calls?closedLimit=10&type=dispatch",
         )
 
+    def test_get_turn_credentials_v2_builds_optional_query(self):
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["url"] = request.full_url
+            return FakeResponse({"ttl": 600})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            response = self.cad.getTurnCredentialsV2({"userId": "unit/1"})
+
+        self.assertTrue(response.success)
+        self.assertEqual(
+            captured["url"],
+            "https://api.sonorancad.com/v2/general/turn?userId=unit%2F1",
+        )
+
     def test_create_emergency_call_v2_strips_server_id_from_body(self):
         captured = {}
 
