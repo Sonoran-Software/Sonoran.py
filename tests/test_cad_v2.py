@@ -161,6 +161,29 @@ class CADV2Tests(unittest.TestCase):
         )
         self.assertEqual(captured["body"], {"roblox": 123456789, "reason": "spam"})
 
+    def test_update_unit_locations_v2_supports_roblox_updates(self):
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["url"] = request.full_url
+            captured["body"] = json.loads(request.data.decode("utf-8"))
+            return FakeResponse({"updated": 1})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            response = self.cad.updateUnitLocationsV2(
+                {
+                    "serverId": 4,
+                    "updates": [{"roblox": 123456789, "location": "Mission Row"}],
+                }
+            )
+
+        self.assertTrue(response.success)
+        self.assertEqual(
+            captured["url"],
+            "https://api.sonorancad.com/v2/emergency/servers/4/unit-locations",
+        )
+        self.assertEqual(captured["body"], {"updates": [{"roblox": 123456789, "location": "Mission Row"}]})
+
     def test_retries_429_responses(self):
         calls = {"count": 0}
 

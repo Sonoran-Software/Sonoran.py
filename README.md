@@ -39,6 +39,20 @@ else:
     print(response.reason)
 ```
 
+```python
+location_response = instance.cad.updateUnitLocationsV2(
+    {
+        "serverId": 1,
+        "updates": [
+            {
+                "roblox": 123456789,
+                "location": "Mission Row",
+            }
+        ],
+    }
+)
+```
+
 ## Notes
 
 - Only CAD v2 helpers are included right now.
