@@ -29,6 +29,28 @@ class CADManager(object):
     def _without_keys(self, data, *keys):
         return dict((key, value) for key, value in data.items() if key not in keys)
 
+    def _normalize_record_replace_values_body(self, data):
+        body = dict(data)
+        replace_values = body.get("replaceValues")
+        if not isinstance(replace_values, dict):
+            return body
+
+        normalized = {}
+        for key, value in replace_values.items():
+            if value is None:
+                continue
+            if isinstance(value, str):
+                normalized[key] = value
+            elif isinstance(value, bool):
+                normalized[key] = "true" if value else "false"
+            elif isinstance(value, (int, float)):
+                normalized[key] = str(value)
+            else:
+                normalized[key] = json.dumps(value)
+
+        body["replaceValues"] = normalized
+        return body
+
     def _build_url(self, path, query=None):
         base_url = self.instance.cadApiUrl.rstrip("/")
         url = "{0}/{1}".format(base_url, path.lstrip("/"))
@@ -138,18 +160,18 @@ class CADManager(object):
         return self._execute_cad_v2_request("GET", "v2/general/templates")
 
     def createRecordV2(self, data):
-        return self._execute_cad_v2_request("POST", "v2/general/records", body=dict(data))
+        return self._execute_cad_v2_request("POST", "v2/general/records", body=self._normalize_record_replace_values_body(data))
 
     def updateRecordV2(self, recordId, data):
         self._assert_positive_integer(recordId, "recordId")
-        return self._execute_cad_v2_request("PATCH", "v2/general/records/{0}".format(recordId), body=dict(data))
+        return self._execute_cad_v2_request("PATCH", "v2/general/records/{0}".format(recordId), body=self._normalize_record_replace_values_body(data))
 
     def removeRecordV2(self, recordId):
         self._assert_positive_integer(recordId, "recordId")
         return self._execute_cad_v2_request("DELETE", "v2/general/records/{0}".format(recordId))
 
     def sendRecordDraftV2(self, data):
-        return self._execute_cad_v2_request("POST", "v2/general/record-drafts", body=dict(data))
+        return self._execute_cad_v2_request("POST", "v2/general/record-drafts", body=self._normalize_record_replace_values_body(data))
 
     def lookupV2(self, data):
         return self._execute_cad_v2_request("POST", "v2/general/lookups", body=dict(data))

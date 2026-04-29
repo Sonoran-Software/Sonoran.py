@@ -172,6 +172,37 @@ class CADV2Tests(unittest.TestCase):
         self.assertTrue(response.success)
         self.assertIsNone(response.data)
 
+    def test_create_record_v2_stringifies_replace_values(self):
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["body"] = json.loads(request.data.decode("utf-8"))
+            return FakeResponse({"ok": True})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            response = self.cad.createRecordV2(
+                {
+                    "useDictionary": True,
+                    "recordTypeId": 5,
+                    "replaceValues": {
+                        "year": 1990,
+                        "status": True,
+                        "flags": {"items": ["A", "B"]},
+                        "skip": None,
+                    },
+                }
+            )
+
+        self.assertTrue(response.success)
+        self.assertEqual(
+            captured["body"]["replaceValues"],
+            {
+                "year": "1990",
+                "status": "true",
+                "flags": "{\"items\": [\"A\", \"B\"]}",
+            },
+        )
+
 
 class RadioV2Tests(unittest.TestCase):
     def setUp(self):
