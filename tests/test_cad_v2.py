@@ -125,7 +125,41 @@ class CADV2Tests(unittest.TestCase):
             captured["url"],
             "https://api.sonorancad.com/v2/emergency/servers/8/identifier-groups/CAR-51",
         )
-        self.assertEqual(captured["body"], {"apiIds": ["abc", "def"]})
+        self.assertEqual(captured["body"], {"communityUserIds": ["abc", "def"]})
+
+    def test_get_characters_v2_supports_roblox_query(self):
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["url"] = request.full_url
+            return FakeResponse({"characters": []})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            response = self.cad.getCharactersV2({"roblox": 123456789})
+
+        self.assertTrue(response.success)
+        self.assertEqual(
+            captured["url"],
+            "https://api.sonorancad.com/v2/civilian/characters?roblox=123456789",
+        )
+
+    def test_kick_unit_v2_supports_roblox_body(self):
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["url"] = request.full_url
+            captured["body"] = json.loads(request.data.decode("utf-8"))
+            return FakeResponse({"ok": True})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            response = self.cad.kickUnitV2({"serverId": 4, "roblox": 123456789, "reason": "spam"})
+
+        self.assertTrue(response.success)
+        self.assertEqual(
+            captured["url"],
+            "https://api.sonorancad.com/v2/emergency/servers/4/units/kick",
+        )
+        self.assertEqual(captured["body"], {"roblox": 123456789, "reason": "spam"})
 
     def test_retries_429_responses(self):
         calls = {"count": 0}

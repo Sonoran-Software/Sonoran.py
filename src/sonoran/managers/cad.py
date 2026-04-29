@@ -51,6 +51,23 @@ class CADManager(object):
         body["replaceValues"] = normalized
         return body
 
+    def _normalize_v2_target_aliases(self, data):
+        if not isinstance(data, dict):
+            return data
+
+        body = dict(data)
+        if body.get("communityUserId") is None and body.get("apiId") is not None:
+            body["communityUserId"] = body.get("apiId")
+        if body.get("communityUserIds") is None and body.get("apiIds") is not None:
+            body["communityUserIds"] = body.get("apiIds")
+        if body.get("notifyCommunityUserId") is None and body.get("notifyApiId") is not None:
+            body["notifyCommunityUserId"] = body.get("notifyApiId")
+
+        body.pop("apiId", None)
+        body.pop("apiIds", None)
+        body.pop("notifyApiId", None)
+        return body
+
     def _build_url(self, path, query=None):
         base_url = self.instance.cadApiUrl.rstrip("/")
         url = "{0}/{1}".format(base_url, path.lstrip("/"))
@@ -142,10 +159,10 @@ class CADManager(object):
         return self._execute_cad_v2_request("GET", "v2/general/api-ids/{0}".format(urllib.parse.quote(apiId, safe="")))
 
     def applyPermissionKeyV2(self, data):
-        return self._execute_cad_v2_request("POST", "v2/general/permission-keys/applications", body=dict(data))
+        return self._execute_cad_v2_request("POST", "v2/general/permission-keys/applications", body=self._normalize_v2_target_aliases(dict(data)))
 
     def banUserV2(self, data):
-        return self._execute_cad_v2_request("POST", "v2/general/account-bans", body=dict(data))
+        return self._execute_cad_v2_request("POST", "v2/general/account-bans", body=self._normalize_v2_target_aliases(dict(data)))
 
     def setPenalCodesV2(self, codes):
         return self._execute_cad_v2_request("PUT", "v2/general/penal-codes", body={"codes": list(codes)})
@@ -160,30 +177,30 @@ class CADManager(object):
         return self._execute_cad_v2_request("GET", "v2/general/templates")
 
     def createRecordV2(self, data):
-        return self._execute_cad_v2_request("POST", "v2/general/records", body=self._normalize_record_replace_values_body(data))
+        return self._execute_cad_v2_request("POST", "v2/general/records", body=self._normalize_v2_target_aliases(self._normalize_record_replace_values_body(data)))
 
     def updateRecordV2(self, recordId, data):
         self._assert_positive_integer(recordId, "recordId")
-        return self._execute_cad_v2_request("PATCH", "v2/general/records/{0}".format(recordId), body=self._normalize_record_replace_values_body(data))
+        return self._execute_cad_v2_request("PATCH", "v2/general/records/{0}".format(recordId), body=self._normalize_v2_target_aliases(self._normalize_record_replace_values_body(data)))
 
     def removeRecordV2(self, recordId):
         self._assert_positive_integer(recordId, "recordId")
         return self._execute_cad_v2_request("DELETE", "v2/general/records/{0}".format(recordId))
 
     def sendRecordDraftV2(self, data):
-        return self._execute_cad_v2_request("POST", "v2/general/record-drafts", body=self._normalize_record_replace_values_body(data))
+        return self._execute_cad_v2_request("POST", "v2/general/record-drafts", body=self._normalize_v2_target_aliases(self._normalize_record_replace_values_body(data)))
 
     def lookupV2(self, data):
-        return self._execute_cad_v2_request("POST", "v2/general/lookups", body=dict(data))
+        return self._execute_cad_v2_request("POST", "v2/general/lookups", body=self._normalize_v2_target_aliases(dict(data)))
 
     def lookupByValueV2(self, data):
-        return self._execute_cad_v2_request("POST", "v2/general/lookups/by-value", body=dict(data))
+        return self._execute_cad_v2_request("POST", "v2/general/lookups/by-value", body=self._normalize_v2_target_aliases(dict(data)))
 
     def lookupCustomV2(self, data):
         return self._execute_cad_v2_request("POST", "v2/general/lookups/custom", body=dict(data))
 
     def getAccountV2(self, query=None):
-        return self._execute_cad_v2_request("GET", "v2/general/accounts/account", query=dict(query or {}))
+        return self._execute_cad_v2_request("GET", "v2/general/accounts/account", query=self._normalize_v2_target_aliases(dict(query or {})))
 
     def getAccountsV2(self, query=None):
         return self._execute_cad_v2_request("GET", "v2/general/accounts", query=dict(query or {}))
@@ -195,7 +212,7 @@ class CADManager(object):
         return self._execute_cad_v2_request("POST", "v2/general/links/check", body=dict(data))
 
     def setAccountPermissionsV2(self, data):
-        return self._execute_cad_v2_request("PATCH", "v2/general/accounts/permissions", body=dict(data))
+        return self._execute_cad_v2_request("PATCH", "v2/general/accounts/permissions", body=self._normalize_v2_target_aliases(dict(data)))
 
     def heartbeatV2(self, serverId, playerCount):
         resolved_server_id = self._resolve_cad_server_id(serverId)
@@ -221,29 +238,29 @@ class CADManager(object):
         return self._execute_cad_v2_request("PUT", "v2/general/postals", body={"postals": list(postals)})
 
     def sendPhotoV2(self, data):
-        return self._execute_cad_v2_request("POST", "v2/general/photos", body=dict(data))
+        return self._execute_cad_v2_request("POST", "v2/general/photos", body=self._normalize_v2_target_aliases(dict(data)))
 
     def getInfoV2(self):
         return self._execute_cad_v2_request("GET", "v2/general/info")
 
     def getCharactersV2(self, query=None):
-        return self._execute_cad_v2_request("GET", "v2/civilian/characters", query=dict(query or {}))
+        return self._execute_cad_v2_request("GET", "v2/civilian/characters", query=self._normalize_v2_target_aliases(dict(query or {})))
 
     def removeCharacterV2(self, characterId):
         self._assert_positive_integer(characterId, "characterId")
         return self._execute_cad_v2_request("DELETE", "v2/civilian/characters/{0}".format(characterId))
 
     def setSelectedCharacterV2(self, data):
-        return self._execute_cad_v2_request("PUT", "v2/civilian/selected-character", body=dict(data))
+        return self._execute_cad_v2_request("PUT", "v2/civilian/selected-character", body=self._normalize_v2_target_aliases(dict(data)))
 
     def getCharacterLinksV2(self, query=None):
-        return self._execute_cad_v2_request("GET", "v2/civilian/character-links", query=dict(query or {}))
+        return self._execute_cad_v2_request("GET", "v2/civilian/character-links", query=self._normalize_v2_target_aliases(dict(query or {})))
 
     def addCharacterLinkV2(self, syncId, data):
-        return self._execute_cad_v2_request("PUT", "v2/civilian/character-links/{0}".format(urllib.parse.quote(syncId, safe="")), body=dict(data))
+        return self._execute_cad_v2_request("PUT", "v2/civilian/character-links/{0}".format(urllib.parse.quote(syncId, safe="")), body=self._normalize_v2_target_aliases(dict(data)))
 
     def removeCharacterLinkV2(self, syncId, data):
-        return self._execute_cad_v2_request("DELETE", "v2/civilian/character-links/{0}".format(urllib.parse.quote(syncId, safe="")), body=dict(data))
+        return self._execute_cad_v2_request("DELETE", "v2/civilian/character-links/{0}".format(urllib.parse.quote(syncId, safe="")), body=self._normalize_v2_target_aliases(dict(data)))
 
     def getUnitsV2(self, query=None):
         payload = dict(query or {})
@@ -260,21 +277,22 @@ class CADManager(object):
 
     def updateUnitLocationsV2(self, data):
         payload = dict(data)
+        payload["updates"] = [self._normalize_v2_target_aliases(dict(update)) for update in payload.get("updates", [])]
         resolved_server_id = self._resolve_cad_server_id(payload.pop("serverId", None))
         return self._execute_cad_v2_request("PATCH", "v2/emergency/servers/{0}/unit-locations".format(resolved_server_id), body=payload)
 
     def setUnitPanicV2(self, data):
-        payload = dict(data)
+        payload = self._normalize_v2_target_aliases(dict(data))
         resolved_server_id = self._resolve_cad_server_id(payload.pop("serverId", None))
         return self._execute_cad_v2_request("PATCH", "v2/emergency/servers/{0}/units/panic".format(resolved_server_id), body=payload)
 
     def setUnitStatusV2(self, data):
-        payload = dict(data)
+        payload = self._normalize_v2_target_aliases(dict(data))
         resolved_server_id = self._resolve_cad_server_id(payload.pop("serverId", None))
         return self._execute_cad_v2_request("PATCH", "v2/emergency/servers/{0}/units/status".format(resolved_server_id), body=payload)
 
     def kickUnitV2(self, data):
-        payload = dict(data)
+        payload = self._normalize_v2_target_aliases(dict(data))
         resolved_server_id = self._resolve_cad_server_id(payload.pop("serverId", None))
         return self._execute_cad_v2_request("DELETE", "v2/emergency/servers/{0}/units/kick".format(resolved_server_id), body=payload)
 
@@ -302,7 +320,7 @@ class CADManager(object):
         return self._execute_cad_v2_request("DELETE", "v2/emergency/accounts/{0}/identifiers/{1}".format(urllib.parse.quote(accountUuid, safe=""), identId))
 
     def addIdentifiersToGroupV2(self, data):
-        payload = dict(data)
+        payload = self._normalize_v2_target_aliases(dict(data))
         resolved_server_id = self._resolve_cad_server_id(payload.pop("serverId", None))
         group_name = urllib.parse.quote(str(payload.pop("groupName")), safe="")
         return self._execute_cad_v2_request("PUT", "v2/emergency/servers/{0}/identifier-groups/{1}".format(resolved_server_id, group_name), body=payload)
@@ -318,7 +336,7 @@ class CADManager(object):
         return self._execute_cad_v2_request("DELETE", "v2/emergency/servers/{0}/calls/911/{1}".format(resolved_server_id, callId))
 
     def createDispatchCallV2(self, data):
-        payload = dict(data)
+        payload = self._normalize_v2_target_aliases(dict(data))
         resolved_server_id = self._resolve_cad_server_id(payload.pop("serverId", None))
         return self._execute_cad_v2_request("POST", "v2/emergency/servers/{0}/dispatch-calls".format(resolved_server_id), body=payload)
 
@@ -330,11 +348,11 @@ class CADManager(object):
     def attachUnitsToDispatchCallV2(self, callId, data):
         resolved_server_id = self._resolve_cad_server_id(data.get("serverId"))
         self._assert_positive_integer(callId, "callId")
-        return self._execute_cad_v2_request("POST", "v2/emergency/servers/{0}/dispatch-calls/{1}/attachments".format(resolved_server_id, callId), body=self._without_keys(data, "serverId"))
+        return self._execute_cad_v2_request("POST", "v2/emergency/servers/{0}/dispatch-calls/{1}/attachments".format(resolved_server_id, callId), body=self._normalize_v2_target_aliases(self._without_keys(data, "serverId")))
 
     def detachUnitsFromDispatchCallV2(self, data):
         resolved_server_id = self._resolve_cad_server_id(data.get("serverId"))
-        return self._execute_cad_v2_request("DELETE", "v2/emergency/servers/{0}/dispatch-calls/attachments".format(resolved_server_id), body=self._without_keys(data, "serverId"))
+        return self._execute_cad_v2_request("DELETE", "v2/emergency/servers/{0}/dispatch-calls/attachments".format(resolved_server_id), body=self._normalize_v2_target_aliases(self._without_keys(data, "serverId")))
 
     def setDispatchPostalV2(self, callId, postal, serverId=None):
         resolved_server_id = self._resolve_cad_server_id(serverId)
