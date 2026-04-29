@@ -373,4 +373,4 @@ class CADManager(object):
 
     def deleteBlipsV2(self, ids, serverId=None):
         resolved_server_id = self._resolve_cad_server_id(serverId)
-        return self._execute_cad_v2_request("DELETE", "v2/emergency/servers/{0}/blips".format(resolved_server_id), body={"ids": list(ids)})
+        return self._execute_cad_v2_request("POST", "v2/emergency/servers/{0}/blips/delete".format(resolved_server_id), body={"ids": list(ids)})
