@@ -68,6 +68,40 @@ class CADManager(object):
         body.pop("notifyApiId", None)
         return body
 
+    def _build_multipart_body(self, fields, file_name, file_content, content_type=None):
+        if not file_name:
+            raise ValueError("fileName is required when uploading a bodycam recording.")
+
+        if isinstance(file_content, memoryview):
+            file_bytes = file_content.tobytes()
+        elif isinstance(file_content, (bytes, bytearray)):
+            file_bytes = bytes(file_content)
+        elif isinstance(file_content, str):
+            file_bytes = file_content.encode("utf-8")
+        else:
+            raise TypeError("fileContent must be bytes, bytearray, memoryview, or string.")
+
+        boundary = "----SonoranPyBodycamBoundary7MA4YWxkTrZu0gW"
+        parts = []
+
+        for key, value in (fields or {}).items():
+            if value is None:
+                continue
+
+            parts.append(("--{0}\r\n".format(boundary)).encode("utf-8"))
+            parts.append(('Content-Disposition: form-data; name="{0}"\r\n\r\n'.format(key)).encode("utf-8"))
+            parts.append(str(value).encode("utf-8"))
+            parts.append(b"\r\n")
+
+        parts.append(("--{0}\r\n".format(boundary)).encode("utf-8"))
+        parts.append(('Content-Disposition: form-data; name="file"; filename="{0}"\r\n'.format(file_name)).encode("utf-8"))
+        parts.append(("Content-Type: {0}\r\n\r\n".format(content_type or "video/webm")).encode("utf-8"))
+        parts.append(file_bytes)
+        parts.append(b"\r\n")
+        parts.append(("--{0}--\r\n".format(boundary)).encode("utf-8"))
+
+        return boundary, b"".join(parts)
+
     def _build_url(self, path, query=None):
         base_url = self.instance.cadApiUrl.rstrip("/")
         url = "{0}/{1}".format(base_url, path.lstrip("/"))
@@ -119,7 +153,7 @@ class CADManager(object):
 
         return min(retry_after_ms, CAD_V2_RATE_LIMIT_MAX_DELAY_MS)
 
-    def _execute_cad_v2_request(self, method, path, query=None, body=None, authenticated=True):
+    def _execute_cad_v2_request(self, method, path, query=None, body=None, raw_body=None, content_type=None, authenticated=True):
         headers = {"Accept": "application/json"}
         headers.update(self.instance.apiHeaders)
 
@@ -129,7 +163,10 @@ class CADManager(object):
             headers["Authorization"] = "Bearer {0}".format(self.instance.cadApiKey)
 
         payload = None
-        if body is not None:
+        if raw_body is not None:
+            headers["Content-Type"] = content_type or "application/octet-stream"
+            payload = raw_body
+        elif body is not None:
             headers["Content-Type"] = "application/json"
             payload = json.dumps(body).encode("utf-8")
 
@@ -242,6 +279,19 @@ class CADManager(object):
 
     def sendPhotoV2(self, data):
         return self._execute_cad_v2_request("POST", "v2/general/photos", body=self._normalize_v2_target_aliases(dict(data)))
+
+    def uploadBodycamRecordingV2(self, data):
+        payload = self._normalize_v2_target_aliases(dict(data or {}))
+        file_name = payload.pop("fileName", None)
+        file_content = payload.pop("fileContent", None)
+        content_type = payload.pop("contentType", "video/webm")
+        boundary, multipart_body = self._build_multipart_body(payload, file_name, file_content, content_type)
+        return self._execute_cad_v2_request(
+            "POST",
+            "v2/general/bodycam-recordings",
+            raw_body=multipart_body,
+            content_type="multipart/form-data; boundary={0}".format(boundary),
+        )
 
     def getInfoV2(self):
         return self._execute_cad_v2_request("GET", "v2/general/info")

@@ -53,9 +53,26 @@ location_response = instance.cad.updateUnitLocationsV2(
 )
 ```
 
+```python
+with open("bodycam-clip.webm", "rb") as clip:
+    bodycam_response = instance.cad.uploadBodycamRecordingV2(
+        {
+            "accountUuid": "USER_ACCOUNT_UUID",
+            "durationMs": 90000,
+            "identId": 123,
+            "unitNumber": "1A-12",
+            "unitLocation": "Senora Fwy / Route 68",
+            "fileName": "bodycam-clip.webm",
+            "fileContent": clip.read(),
+            "contentType": "video/webm",
+        }
+    )
+```
+
 ## Notes
 
 - Only CAD v2 helpers are included right now.
 - Helper names match `Sonoran.js`.
+- Bodycam uploads use `instance.cad.uploadBodycamRecordingV2(...)` with multipart form data built by the SDK.
 - CAD v2 requests automatically retry `429` responses up to 2 times and respect `Retry-After` when it is provided.
 - The import package remains `sonoran`.

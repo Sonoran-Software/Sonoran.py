@@ -159,6 +159,42 @@ class CADV2Tests(unittest.TestCase):
             "https://api.sonorancad.com/v2/civilian/characters?roblox=123456789",
         )
 
+    def test_upload_bodycam_recording_v2_uses_multipart_form_data(self):
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["url"] = request.full_url
+            captured["method"] = request.get_method()
+            captured["headers"] = dict(request.header_items())
+            captured["body"] = request.data
+            return FakeResponse(["https://files.example.com/bodycam-clip.webm"])
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            response = self.cad.uploadBodycamRecordingV2(
+                {
+                    "apiId": "1",
+                    "durationMs": 90000,
+                    "identId": 123,
+                    "unitNumber": "1A-12",
+                    "unitLocation": "Senora Fwy / Route 68",
+                    "fileName": "bodycam-clip.webm",
+                    "fileContent": b"webm-data",
+                }
+            )
+
+        self.assertTrue(response.success)
+        self.assertEqual(captured["method"], "POST")
+        self.assertEqual(
+            captured["url"],
+            "https://api.sonorancad.com/v2/general/bodycam-recordings",
+        )
+        self.assertEqual(captured["headers"]["Authorization"], "Bearer test-key")
+        self.assertIn("multipart/form-data; boundary=----SonoranPyBodycamBoundary7MA4YWxkTrZu0gW", captured["headers"]["Content-type"])
+        self.assertIn(b'name="communityUserId"', captured["body"])
+        self.assertIn(b'name="durationMs"', captured["body"])
+        self.assertIn(b'name="file"; filename="bodycam-clip.webm"', captured["body"])
+        self.assertIn(b"webm-data", captured["body"])
+
     def test_kick_unit_v2_supports_roblox_body(self):
         captured = {}
 
