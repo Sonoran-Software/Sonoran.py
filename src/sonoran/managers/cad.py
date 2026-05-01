@@ -449,7 +449,7 @@ class CADManager(object):
 
     def setStationsV2(self, config, serverId=None):
         resolved_server_id = self._resolve_cad_server_id(serverId)
-        return self._execute_cad_v2_request("PUT", "v2/emergency/servers/{0}/stations".format(resolved_server_id), body={"config": config})
+        return self._execute_cad_v2_request("PUT", "v2/emergency/servers/{0}/stations".format(resolved_server_id), body=config)
 
     def getBlipsV2(self, serverId=None):
         resolved_server_id = self._resolve_cad_server_id(serverId)

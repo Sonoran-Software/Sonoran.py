@@ -73,6 +73,7 @@ with open("bodycam-clip.webm", "rb") as clip:
 
 - Only CAD v2 helpers are included right now.
 - Helper names match `Sonoran.js`.
+- `instance.cad.setStationsV2(...)` sends `locations`, `tones`, and `unitColors` at the top level of the request body.
 - Bodycam uploads use `instance.cad.uploadBodycamRecordingV2(...)` with multipart form data built by the SDK.
 - CAD v2 requests automatically retry `429` responses up to 2 times and respect `Retry-After` when it is provided.
 - The import package remains `sonoran`.
