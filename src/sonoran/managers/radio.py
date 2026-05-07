@@ -12,10 +12,19 @@ class RadioManager(object):
     def __init__(self, instance):
         self.instance = instance
 
-    def _resolve_radio_server_id(self, server_id):
-        resolved = server_id if server_id is not None else self.instance.radioDefaultServerId
+    def _resolve_radio_community_id(self, community_id=None):
+        resolved = community_id
+        if resolved is None:
+            resolved = self.instance.radioCommunityId
+        if resolved is None:
+            resolved = self.instance.radioDefaultServerId
+        if isinstance(resolved, str):
+            resolved = resolved.strip()
+            if not resolved:
+                raise ValueError("communityId is required.")
+            return resolved
         if not isinstance(resolved, int) or resolved <= 0:
-            raise ValueError("serverId must be a positive integer.")
+            raise ValueError("communityId must be a non-empty string or a positive integer.")
         return resolved
 
     def _build_url(self, path):
@@ -52,28 +61,36 @@ class RadioManager(object):
         except urllib.error.HTTPError as error:
             return CADStandardResponse(success=False, reason=self._parse_response_payload(error.read()))
 
-    def getCommunityChannelsV2(self, serverId=None):
-        resolved_server_id = self._resolve_radio_server_id(serverId)
-        return self._request("GET", "v2/servers/{0}/channels".format(resolved_server_id))
+    def getCommunityChannelsV2(self, communityId=None):
+        resolved_community_id = self._resolve_radio_community_id(communityId)
+        return self._request("GET", "v2/servers/{0}/channels".format(resolved_community_id))
 
-    def getConnectedUsersV2(self, serverId=None):
-        resolved_server_id = self._resolve_radio_server_id(serverId)
-        return self._request("GET", "v2/servers/{0}/connected-users".format(resolved_server_id))
+    def getConnectedUsersV2(self, communityId=None):
+        resolved_community_id = self._resolve_radio_community_id(communityId)
+        return self._request("GET", "v2/servers/{0}/connected-users".format(resolved_community_id))
 
-    def getConnectedUserV2(self, roomId, identity, serverId=None):
-        resolved_server_id = self._resolve_radio_server_id(serverId)
+    def getMembersV2(self, query=None, communityId=None):
+        resolved_community_id = self._resolve_radio_community_id(communityId)
+        query = dict(query or {})
+        path = "v2/servers/{0}/members".format(resolved_community_id)
+        if query:
+            path = "{0}?{1}".format(path, urllib.parse.urlencode(query, doseq=True))
+        return self._request("GET", path)
+
+    def getConnectedUserV2(self, roomId, identity, communityId=None):
+        resolved_community_id = self._resolve_radio_community_id(communityId)
         return self._request("GET", "v2/servers/{0}/rooms/{1}/users/{2}".format(
-            resolved_server_id,
+            resolved_community_id,
             int(roomId),
             urllib.parse.quote(identity, safe=""),
         ))
 
-    def setUserChannelsV2(self, roomId, identity, options=None, serverId=None):
-        resolved_server_id = self._resolve_radio_server_id(serverId)
+    def setUserChannelsV2(self, roomId, identity, options=None, communityId=None):
+        resolved_community_id = self._resolve_radio_community_id(communityId)
         return self._request(
             "PATCH",
             "v2/servers/{0}/rooms/{1}/users/{2}/channels".format(
-                resolved_server_id,
+                resolved_community_id,
                 int(roomId),
                 urllib.parse.quote(identity, safe=""),
             ),
@@ -81,47 +98,49 @@ class RadioManager(object):
         )
 
     def setUserDisplayNameV2(self, data):
-        resolved_server_id = self._resolve_radio_server_id(data.get("serverId"))
+        resolved_community_id = self._resolve_radio_community_id(data.get("communityId", data.get("serverId")))
         payload = dict(data)
         payload.pop("serverId", None)
-        return self._request("PATCH", "v2/servers/{0}/users/display-name".format(resolved_server_id), body=payload)
+        payload.pop("communityId", None)
+        return self._request("PATCH", "v2/servers/{0}/users/display-name".format(resolved_community_id), body=payload)
 
-    def approveMembersV2(self, accIds, serverId=None):
-        resolved_server_id = self._resolve_radio_server_id(serverId)
-        return self._request("POST", "v2/servers/{0}/members/approve".format(resolved_server_id), body={"accIds": list(accIds)})
+    def approveMembersV2(self, accIds, communityId=None):
+        resolved_community_id = self._resolve_radio_community_id(communityId)
+        return self._request("POST", "v2/servers/{0}/members/approve".format(resolved_community_id), body={"accIds": list(accIds)})
 
-    def kickMembersV2(self, accIds, serverId=None):
-        resolved_server_id = self._resolve_radio_server_id(serverId)
-        return self._request("POST", "v2/servers/{0}/members/kick".format(resolved_server_id), body={"accIds": list(accIds)})
+    def kickMembersV2(self, accIds, communityId=None):
+        resolved_community_id = self._resolve_radio_community_id(communityId)
+        return self._request("POST", "v2/servers/{0}/members/kick".format(resolved_community_id), body={"accIds": list(accIds)})
 
-    def banMembersV2(self, accIds, serverId=None):
-        resolved_server_id = self._resolve_radio_server_id(serverId)
-        return self._request("POST", "v2/servers/{0}/members/ban".format(resolved_server_id), body={"accIds": list(accIds)})
+    def banMembersV2(self, accIds, communityId=None):
+        resolved_community_id = self._resolve_radio_community_id(communityId)
+        return self._request("POST", "v2/servers/{0}/members/ban".format(resolved_community_id), body={"accIds": list(accIds)})
 
-    def setMemberDisplayNamesV2(self, accNicknames, serverId=None):
-        resolved_server_id = self._resolve_radio_server_id(serverId)
-        return self._request("PATCH", "v2/servers/{0}/members/display-names".format(resolved_server_id), body={"accNicknames": list(accNicknames)})
+    def setMemberDisplayNamesV2(self, accNicknames, communityId=None):
+        resolved_community_id = self._resolve_radio_community_id(communityId)
+        return self._request("PATCH", "v2/servers/{0}/members/display-names".format(resolved_community_id), body={"accNicknames": list(accNicknames)})
 
-    def setMemberPermissionsV2(self, userPerms, serverId=None):
-        resolved_server_id = self._resolve_radio_server_id(serverId)
-        return self._request("PATCH", "v2/servers/{0}/members/permissions".format(resolved_server_id), body={"userPerms": list(userPerms)})
+    def setMemberPermissionsV2(self, userPerms, communityId=None):
+        resolved_community_id = self._resolve_radio_community_id(communityId)
+        return self._request("PATCH", "v2/servers/{0}/members/permissions".format(resolved_community_id), body={"userPerms": list(userPerms)})
 
     def getServerSubscriptionFromIpV2(self):
         return self._request("GET", "v2/server-subscriptions/by-ip", authenticated=False)
 
     def setServerIpV2(self, data):
-        resolved_server_id = self._resolve_radio_server_id(data.get("serverId"))
+        resolved_community_id = self._resolve_radio_community_id(data.get("communityId", data.get("serverId")))
         payload = dict(data)
         payload.pop("serverId", None)
-        return self._request("POST", "v2/servers/{0}/server-ip".format(resolved_server_id), body=payload)
+        payload.pop("communityId", None)
+        return self._request("POST", "v2/servers/{0}/server-ip".format(resolved_community_id), body=payload)
 
-    def setInGameSpeakerLocationsV2(self, locations, serverId=None):
-        resolved_server_id = self._resolve_radio_server_id(serverId)
-        return self._request("PUT", "v2/servers/{0}/speakers".format(resolved_server_id), body={"locations": list(locations)})
+    def setInGameSpeakerLocationsV2(self, locations, communityId=None):
+        resolved_community_id = self._resolve_radio_community_id(communityId)
+        return self._request("PUT", "v2/servers/{0}/speakers".format(resolved_community_id), body={"locations": list(locations)})
 
-    def playToneV2(self, roomId, tones, playTo, serverId=None):
-        resolved_server_id = self._resolve_radio_server_id(serverId)
-        return self._request("POST", "v2/servers/{0}/tones/play".format(resolved_server_id), body={
+    def playToneV2(self, roomId, tones, playTo, communityId=None):
+        resolved_community_id = self._resolve_radio_community_id(communityId)
+        return self._request("POST", "v2/servers/{0}/tones/play".format(resolved_community_id), body={
             "roomId": int(roomId),
             "tones": list(tones),
             "playTo": list(playTo),

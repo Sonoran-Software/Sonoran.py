@@ -324,7 +324,7 @@ class RadioV2Tests(unittest.TestCase):
         self.assertIsNotNone(self.instance.radio)
         self.radio = self.instance.radio
 
-    def test_get_connected_users_v2_uses_server_path(self):
+    def test_get_connected_users_v2_uses_community_path(self):
         captured = {}
 
         def fake_urlopen(request, timeout):
@@ -338,9 +338,32 @@ class RadioV2Tests(unittest.TestCase):
         self.assertTrue(response.success)
         self.assertEqual(
             captured["url"],
-            "https://api.sonoranradio.com/v2/servers/4/connected-users",
+            "https://api.sonoranradio.com/v2/servers/radio-community/connected-users",
         )
         self.assertEqual(captured["headers"]["Authorization"], "Bearer radio-key")
+
+    def test_get_members_v2_uses_query_string(self):
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["url"] = request.full_url
+            return FakeResponse({"members": [], "pagination": {"page": 1, "perPage": 25, "total": 0, "totalPages": 0}})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            response = self.radio.getMembersV2(
+                {
+                    "page": 1,
+                    "perPage": 25,
+                    "status": "approved",
+                    "search": "dispatch",
+                }
+            )
+
+        self.assertTrue(response.success)
+        self.assertEqual(
+            captured["url"],
+            "https://api.sonoranradio.com/v2/servers/radio-community/members?page=1&perPage=25&status=approved&search=dispatch",
+        )
 
     def test_set_server_ip_v2_strips_server_id_from_body(self):
         captured = {}
