@@ -405,6 +405,41 @@ class RadioV2Tests(unittest.TestCase):
             "https://api.sonoranradio.com/v2/servers/radio-community/rooms/2/users/user%2F1",
         )
 
+    def test_set_room_id_updates_room_scoped_radio_v2_paths(self):
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["url"] = request.full_url
+            return FakeResponse({"ok": True})
+
+        self.instance.setRoomId(7)
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            response = self.radio.getConnectedUserV2("user/1")
+
+        self.assertTrue(response.success)
+        self.assertEqual(
+            captured["url"],
+            "https://api.sonoranradio.com/v2/servers/radio-community/rooms/7/users/user%2F1",
+        )
+
+    def test_set_room_id_updates_radio_v2_bodies(self):
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["body"] = json.loads(request.data.decode("utf-8"))
+            return FakeResponse({"ok": True})
+
+        self.instance.setRoomId(7)
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            response = self.radio.approveMembersV2(["user-1"])
+
+        self.assertTrue(response.success)
+        self.assertEqual(captured["body"], {"accIds": ["user-1"], "roomId": 7})
+
+    def test_set_room_id_requires_positive_room_id(self):
+        with self.assertRaisesRegex(ValueError, "roomId must be a positive integer."):
+            self.instance.setRoomId(0)
+
     def test_play_tone_v2_adds_configured_room_id(self):
         captured = {}
 

@@ -80,8 +80,10 @@ radio = Instance(
     apiKey="YOUR_RADIO_API_KEY",
     communityId="YOUR_COMMUNITY_ID",
     product=productEnums.RADIO,
-    roomId=1,
+    roomId=2,
 )
+
+radio.setRoomId(1)
 ```
 
 - `instance.cad.setStationsV2(...)` sends `locations`, `tones`, and `unitColors` at the top level of the request body.

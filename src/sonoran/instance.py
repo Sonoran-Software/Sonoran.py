@@ -90,6 +90,13 @@ class Instance(object):
             self.radio = RadioManager(self)
             self.isRadioSuccessful = True
 
+    def setRoomId(self, roomId):
+        room_id = int(roomId)
+        if room_id < 1:
+            raise ValueError("roomId must be a positive integer.")
+        self.radioRoomId = room_id
+        return self
+
     def _debugLog(self, message):
         if self.debug:
             print("[Sonoran.py] {0}".format(message))
