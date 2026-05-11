@@ -319,7 +319,7 @@ class RadioV2Tests(unittest.TestCase):
             apiKey="radio-key",
             communityId="radio-community",
             product=productEnums.RADIO,
-            serverId=4,
+            roomId=2,
         )
         self.assertIsNotNone(self.instance.radio)
         self.radio = self.instance.radio
@@ -365,7 +365,7 @@ class RadioV2Tests(unittest.TestCase):
             "https://api.sonoranradio.com/v2/servers/radio-community/members?page=1&perPage=25&status=approved&search=dispatch",
         )
 
-    def test_set_server_ip_v2_strips_server_id_from_body(self):
+    def test_set_server_ip_v2_adds_configured_room_id(self):
         captured = {}
 
         def fake_urlopen(request, timeout):
@@ -376,8 +376,6 @@ class RadioV2Tests(unittest.TestCase):
         with patch("urllib.request.urlopen", side_effect=fake_urlopen):
             response = self.radio.setServerIpV2(
                 {
-                    "serverId": 8,
-                    "roomId": 2,
                     "serverPort": 30120,
                     "pushUrl": "http://127.0.0.1:30120/sonoranradio",
                 }
@@ -386,9 +384,44 @@ class RadioV2Tests(unittest.TestCase):
         self.assertTrue(response.success)
         self.assertEqual(
             captured["url"],
-            "https://api.sonoranradio.com/v2/servers/8/server-ip",
+            "https://api.sonoranradio.com/v2/servers/radio-community/server-ip",
         )
+        self.assertEqual(captured["body"]["roomId"], 2)
         self.assertNotIn("serverId", captured["body"])
+
+    def test_room_scoped_radio_v2_methods_use_configured_room_id(self):
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["url"] = request.full_url
+            return FakeResponse({"ok": True})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            response = self.radio.getConnectedUserV2("user/1")
+
+        self.assertTrue(response.success)
+        self.assertEqual(
+            captured["url"],
+            "https://api.sonoranradio.com/v2/servers/radio-community/rooms/2/users/user%2F1",
+        )
+
+    def test_play_tone_v2_adds_configured_room_id(self):
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["url"] = request.full_url
+            captured["body"] = json.loads(request.data.decode("utf-8"))
+            return FakeResponse({"ok": True})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            response = self.radio.playToneV2([12], [{"type": "channel", "value": 101}])
+
+        self.assertTrue(response.success)
+        self.assertEqual(
+            captured["url"],
+            "https://api.sonoranradio.com/v2/servers/radio-community/tones/play",
+        )
+        self.assertEqual(captured["body"]["roomId"], 2)
 
 
 if __name__ == "__main__":

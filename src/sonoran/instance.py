@@ -26,7 +26,7 @@ class Instance(object):
         self.radioCommunityId = None
         self.radioApiKey = None
         self.radioApiUrl = "https://api.sonoranradio.com"
-        self.radioDefaultServerId = 1
+        self.radioRoomId = None
         self.isRadioSuccessful = False
 
         self.debug = bool(merged.get("debug", False))
@@ -52,8 +52,8 @@ class Instance(object):
             elif product == productEnums.RADIO:
                 self.radioCommunityId = merged["communityId"]
                 self.radioApiKey = merged["apiKey"]
-                if merged.get("serverId") is not None:
-                    self.radioDefaultServerId = int(merged["serverId"])
+                if merged.get("roomId") is not None:
+                    self.radioRoomId = int(merged["roomId"])
                 if isinstance(merged.get("radioApiUrl"), str):
                     self.radioApiUrl = merged["radioApiUrl"]
             else:
@@ -65,8 +65,10 @@ class Instance(object):
             self.cmsApiKey = merged.get("cmsApiKey")
             self.radioCommunityId = merged.get("radioCommunityId")
             self.radioApiKey = merged.get("radioApiKey")
-            if merged.get("radioDefaultServerId") is not None:
-                self.radioDefaultServerId = int(merged["radioDefaultServerId"])
+            if merged.get("radioRoomId") is not None:
+                self.radioRoomId = int(merged["radioRoomId"])
+            elif merged.get("roomId") is not None:
+                self.radioRoomId = int(merged["roomId"])
             if isinstance(merged.get("radioApiUrl"), str):
                 self.radioApiUrl = merged["radioApiUrl"]
 

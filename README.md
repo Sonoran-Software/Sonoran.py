@@ -1,8 +1,8 @@
 # Sonoran.py
 
-`Sonoran.py` is the Python library for Sonoran CAD integrations.
+`Sonoran.py` is the Python library for Sonoran CAD and Radio integrations.
 
-This repository currently focuses on the CAD v2 API surface and mirrors the public helper names from `Sonoran.js`.
+This repository currently focuses on the CAD and Radio v2 API surfaces and mirrors the public helper names from `Sonoran.js`.
 
 ## Install
 
@@ -71,8 +71,19 @@ with open("bodycam-clip.webm", "rb") as clip:
 
 ## Notes
 
-- Only CAD v2 helpers are included right now.
+- CAD and Radio v2 helpers are included right now.
 - Helper names match `Sonoran.js`.
+- Radio v2 clients use `communityId` for `/v2/servers/{communityId}` routes and `roomId` on client creation for room-scoped helpers:
+
+```python
+radio = Instance(
+    apiKey="YOUR_RADIO_API_KEY",
+    communityId="YOUR_COMMUNITY_ID",
+    product=productEnums.RADIO,
+    roomId=1,
+)
+```
+
 - `instance.cad.setStationsV2(...)` sends `locations`, `tones`, and `unitColors` at the top level of the request body.
 - Bodycam uploads use `instance.cad.uploadBodycamRecordingV2(...)` with multipart form data built by the SDK.
 - CAD v2 requests automatically retry `429` responses up to 2 times and respect `Retry-After` when it is provided.

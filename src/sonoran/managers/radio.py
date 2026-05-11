@@ -16,8 +16,6 @@ class RadioManager(object):
         resolved = community_id
         if resolved is None:
             resolved = self.instance.radioCommunityId
-        if resolved is None:
-            resolved = self.instance.radioDefaultServerId
         if isinstance(resolved, str):
             resolved = resolved.strip()
             if not resolved:
@@ -25,6 +23,14 @@ class RadioManager(object):
             return resolved
         if not isinstance(resolved, int) or resolved <= 0:
             raise ValueError("communityId must be a non-empty string or a positive integer.")
+        return resolved
+
+    def _resolve_radio_room_id(self):
+        resolved = self.instance.radioRoomId
+        if resolved is None:
+            raise ValueError("roomId is required for Radio v2 room-scoped requests.")
+        if not isinstance(resolved, int) or resolved <= 0:
+            raise ValueError("roomId must be a positive integer.")
         return resolved
 
     def _build_url(self, path):
@@ -77,28 +83,30 @@ class RadioManager(object):
             path = "{0}?{1}".format(path, urllib.parse.urlencode(query, doseq=True))
         return self._request("GET", path)
 
-    def getConnectedUserV2(self, roomId, identity, communityId=None):
+    def getConnectedUserV2(self, identity, communityId=None):
         resolved_community_id = self._resolve_radio_community_id(communityId)
+        roomId = self._resolve_radio_room_id()
         return self._request("GET", "v2/servers/{0}/rooms/{1}/users/{2}".format(
             resolved_community_id,
-            int(roomId),
+            roomId,
             urllib.parse.quote(identity, safe=""),
         ))
 
-    def setUserChannelsV2(self, roomId, identity, options=None, communityId=None):
+    def setUserChannelsV2(self, identity, options=None, communityId=None):
         resolved_community_id = self._resolve_radio_community_id(communityId)
+        roomId = self._resolve_radio_room_id()
         return self._request(
             "PATCH",
             "v2/servers/{0}/rooms/{1}/users/{2}/channels".format(
                 resolved_community_id,
-                int(roomId),
+                roomId,
                 urllib.parse.quote(identity, safe=""),
             ),
             body=dict(options or {}),
         )
 
     def setUserDisplayNameV2(self, data):
-        resolved_community_id = self._resolve_radio_community_id(data.get("communityId", data.get("serverId")))
+        resolved_community_id = self._resolve_radio_community_id(data.get("communityId"))
         payload = dict(data)
         payload.pop("serverId", None)
         payload.pop("communityId", None)
@@ -128,20 +136,21 @@ class RadioManager(object):
         return self._request("GET", "v2/server-subscriptions/by-ip", authenticated=False)
 
     def setServerIpV2(self, data):
-        resolved_community_id = self._resolve_radio_community_id(data.get("communityId", data.get("serverId")))
+        resolved_community_id = self._resolve_radio_community_id(data.get("communityId"))
         payload = dict(data)
         payload.pop("serverId", None)
         payload.pop("communityId", None)
+        payload["roomId"] = self._resolve_radio_room_id()
         return self._request("POST", "v2/servers/{0}/server-ip".format(resolved_community_id), body=payload)
 
     def setInGameSpeakerLocationsV2(self, locations, communityId=None):
         resolved_community_id = self._resolve_radio_community_id(communityId)
         return self._request("PUT", "v2/servers/{0}/speakers".format(resolved_community_id), body={"locations": list(locations)})
 
-    def playToneV2(self, roomId, tones, playTo, communityId=None):
+    def playToneV2(self, tones, playTo, communityId=None):
         resolved_community_id = self._resolve_radio_community_id(communityId)
         return self._request("POST", "v2/servers/{0}/tones/play".format(resolved_community_id), body={
-            "roomId": int(roomId),
+            "roomId": self._resolve_radio_room_id(),
             "tones": list(tones),
             "playTo": list(playTo),
         })
