@@ -33,6 +33,11 @@ class RadioManager(object):
             raise ValueError("roomId must be a positive integer.")
         return resolved
 
+    def _with_radio_room_id(self, body):
+        payload = dict(body or {})
+        payload["roomId"] = self._resolve_radio_room_id()
+        return payload
+
     def _build_url(self, path):
         return "{0}/{1}".format(self.instance.radioApiUrl.rstrip("/"), path.lstrip("/"))
 
@@ -58,7 +63,7 @@ class RadioManager(object):
         payload = None
         if body is not None:
             headers["Content-Type"] = "application/json"
-            payload = json.dumps(body).encode("utf-8")
+            payload = json.dumps(self._with_radio_room_id(body)).encode("utf-8")
 
         request = urllib.request.Request(self._build_url(path), data=payload, headers=dict(headers), method=method.upper())
         try:
@@ -140,7 +145,6 @@ class RadioManager(object):
         payload = dict(data)
         payload.pop("serverId", None)
         payload.pop("communityId", None)
-        payload["roomId"] = self._resolve_radio_room_id()
         return self._request("POST", "v2/servers/{0}/server-ip".format(resolved_community_id), body=payload)
 
     def setInGameSpeakerLocationsV2(self, locations, communityId=None):
@@ -150,7 +154,6 @@ class RadioManager(object):
     def playToneV2(self, tones, playTo, communityId=None):
         resolved_community_id = self._resolve_radio_community_id(communityId)
         return self._request("POST", "v2/servers/{0}/tones/play".format(resolved_community_id), body={
-            "roomId": self._resolve_radio_room_id(),
             "tones": list(tones),
             "playTo": list(playTo),
         })
