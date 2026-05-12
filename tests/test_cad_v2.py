@@ -458,6 +458,25 @@ class RadioV2Tests(unittest.TestCase):
         )
         self.assertEqual(captured["body"]["roomId"], 2)
 
+    def test_product_radio_constructor_accepts_radio_room_id_alias_for_tones(self):
+        instance = Instance(
+            apiKey="radio-key",
+            communityId="radio-community",
+            product=productEnums.RADIO,
+            radioRoomId=9,
+        )
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["body"] = json.loads(request.data.decode("utf-8"))
+            return FakeResponse({"ok": True})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            response = instance.radio.playToneV2([12], [{"type": "channel", "value": 101}])
+
+        self.assertTrue(response.success)
+        self.assertEqual(captured["body"]["roomId"], 9)
+
     def test_payload_radio_v2_methods_add_configured_room_id(self):
         captured = {}
 

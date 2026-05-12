@@ -52,7 +52,9 @@ class Instance(object):
             elif product == productEnums.RADIO:
                 self.radioCommunityId = merged["communityId"]
                 self.radioApiKey = merged["apiKey"]
-                if merged.get("roomId") is not None:
+                if merged.get("radioRoomId") is not None:
+                    self.radioRoomId = int(merged["radioRoomId"])
+                elif merged.get("roomId") is not None:
                     self.radioRoomId = int(merged["roomId"])
                 if isinstance(merged.get("radioApiUrl"), str):
                     self.radioApiUrl = merged["radioApiUrl"]
