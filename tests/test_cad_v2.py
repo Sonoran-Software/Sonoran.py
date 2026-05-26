@@ -495,6 +495,24 @@ class RadioV2Tests(unittest.TestCase):
         )
         self.assertEqual(captured["body"], {"accIds": ["user-1"], "roomId": 2})
 
+    def test_radio_unban_members_v2_uses_expected_endpoint(self):
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["url"] = request.full_url
+            captured["body"] = json.loads(request.data.decode("utf-8"))
+            return FakeResponse({"ok": True})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            response = self.radio.unbanMembersV2(["user-1"])
+
+        self.assertTrue(response.success)
+        self.assertEqual(
+            captured["url"],
+            "https://api.sonoranradio.com/v2/servers/radio-community/members/unban",
+        )
+        self.assertEqual(captured["body"], {"accIds": ["user-1"], "roomId": 2})
+
 
 if __name__ == "__main__":
     unittest.main()

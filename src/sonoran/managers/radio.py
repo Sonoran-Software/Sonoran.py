@@ -129,6 +129,10 @@ class RadioManager(object):
         resolved_community_id = self._resolve_radio_community_id(communityId)
         return self._request("POST", "v2/servers/{0}/members/ban".format(resolved_community_id), body={"accIds": list(accIds)})
 
+    def unbanMembersV2(self, accIds, communityId=None):
+        resolved_community_id = self._resolve_radio_community_id(communityId)
+        return self._request("POST", "v2/servers/{0}/members/unban".format(resolved_community_id), body={"accIds": list(accIds)})
+
     def setMemberDisplayNamesV2(self, accNicknames, communityId=None):
         resolved_community_id = self._resolve_radio_community_id(communityId)
         return self._request("PATCH", "v2/servers/{0}/members/display-names".format(resolved_community_id), body={"accNicknames": list(accNicknames)})
