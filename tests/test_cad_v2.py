@@ -213,6 +213,24 @@ class CADV2Tests(unittest.TestCase):
         )
         self.assertEqual(captured["body"], {"roblox": 123456789, "reason": "spam"})
 
+    def test_kick_unit_v2_supports_discord_body(self):
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["url"] = request.full_url
+            captured["body"] = json.loads(request.data.decode("utf-8"))
+            return FakeResponse({"ok": True})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            response = self.cad.kickUnitV2({"serverId": 4, "discord": "123456789012345678", "reason": "spam"})
+
+        self.assertTrue(response.success)
+        self.assertEqual(
+            captured["url"],
+            "https://api.sonorancad.com/v2/emergency/servers/4/units/kick",
+        )
+        self.assertEqual(captured["body"], {"discord": "123456789012345678", "reason": "spam"})
+
     def test_update_unit_locations_v2_supports_roblox_updates(self):
         captured = {}
 

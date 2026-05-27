@@ -89,4 +89,5 @@ radio.setRoomId(1)
 - `instance.cad.setStationsV2(...)` sends `locations`, `tones`, and `unitColors` at the top level of the request body.
 - Bodycam uploads use `instance.cad.uploadBodycamRecordingV2(...)` with multipart form data built by the SDK.
 - CAD v2 requests automatically retry `429` responses up to 2 times and respect `Retry-After` when it is provided.
+- Account-targeted CAD v2 helpers accept `accountUuid`, `communityUserId`, `roblox`, `discord`, and legacy `apiId` where supported by the backend.
 - The import package remains `sonoran`.
