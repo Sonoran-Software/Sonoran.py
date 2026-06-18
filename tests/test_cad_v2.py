@@ -383,6 +383,22 @@ class RadioV2Tests(unittest.TestCase):
             "https://api.sonoranradio.com/v2/servers/radio-community/members?page=1&perPage=25&status=approved&search=dispatch",
         )
 
+    def test_get_transmissions_v2_uses_query_string(self):
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["url"] = request.full_url
+            return FakeResponse({"transmissions": [], "pagination": {"page": 1, "perPage": 25, "total": 0, "totalPages": 0}})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            response = self.radio.getTransmissionsV2({"page": 1, "perPage": 25})
+
+        self.assertTrue(response.success)
+        self.assertEqual(
+            captured["url"],
+            "https://api.sonoranradio.com/v2/servers/radio-community/transmissions?page=1&perPage=25",
+        )
+
     def test_set_server_ip_v2_adds_configured_room_id(self):
         captured = {}
 

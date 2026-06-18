@@ -88,6 +88,14 @@ class RadioManager(object):
             path = "{0}?{1}".format(path, urllib.parse.urlencode(query, doseq=True))
         return self._request("GET", path)
 
+    def getTransmissionsV2(self, query=None, communityId=None):
+        resolved_community_id = self._resolve_radio_community_id(communityId)
+        query = dict(query or {})
+        path = "v2/servers/{0}/transmissions".format(resolved_community_id)
+        if query:
+            path = "{0}?{1}".format(path, urllib.parse.urlencode(query, doseq=True))
+        return self._request("GET", path)
+
     def getConnectedUserV2(self, identity, communityId=None):
         resolved_community_id = self._resolve_radio_community_id(communityId)
         roomId = self._resolve_radio_room_id()
