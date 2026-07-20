@@ -248,6 +248,9 @@ class CADManager(object):
     def checkCommunityLinkV2(self, data):
         return self._execute_cad_v2_request("POST", "v2/general/links/check", body=dict(data))
 
+    def setCommunityLinkV2(self, data):
+        return self._execute_cad_v2_request("POST", "v2/general/links/set", body=dict(data))
+
     def setAccountPermissionsV2(self, data):
         return self._execute_cad_v2_request("PATCH", "v2/general/accounts/permissions", body=self._normalize_v2_target_aliases(dict(data)))
 

@@ -40,6 +40,16 @@ else:
 ```
 
 ```python
+link_response = instance.cad.setCommunityLinkV2(
+    {
+        "accountUuid": "USER_ACCOUNT_UUID",
+        "secretUuid": "USER_ACCOUNT_SECRET_UUID",
+        "communityUserId": "fivem:12345",
+    }
+)
+```
+
+```python
 location_response = instance.cad.updateUnitLocationsV2(
     {
         "serverId": 1,

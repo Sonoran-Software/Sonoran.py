@@ -91,6 +91,28 @@ class CADV2Tests(unittest.TestCase):
             "https://api.sonorancad.com/v2/general/turn?userId=unit%2F1",
         )
 
+    def test_set_community_link_v2_uses_credentials_body(self):
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["url"] = request.full_url
+            captured["method"] = request.get_method()
+            captured["body"] = json.loads(request.data.decode("utf-8"))
+            return FakeResponse({"linked": True})
+
+        payload = {
+            "accountUuid": "account-uuid",
+            "secretUuid": "secret-uuid",
+            "communityUserId": "fivem:123",
+        }
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            response = self.cad.setCommunityLinkV2(payload)
+
+        self.assertTrue(response.success)
+        self.assertEqual(captured["method"], "POST")
+        self.assertEqual(captured["url"], "https://api.sonorancad.com/v2/general/links/set")
+        self.assertEqual(captured["body"], payload)
+
     def test_create_emergency_call_v2_strips_server_id_from_body(self):
         captured = {}
 
