@@ -75,6 +75,25 @@ class CADV2Tests(unittest.TestCase):
             "https://api.sonorancad.com/v2/emergency/servers/5/calls?closedLimit=10&type=dispatch",
         )
 
+    def test_get_penal_codes_v2_uses_general_route(self):
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["url"] = request.full_url
+            captured["method"] = request.get_method()
+            return FakeResponse([{"code": "1A"}])
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            response = self.cad.getPenalCodesV2()
+
+        self.assertTrue(response.success)
+        self.assertEqual(captured["method"], "GET")
+        self.assertEqual(
+            captured["url"],
+            "https://api.sonorancad.com/v2/general/penal-codes",
+        )
+        self.assertEqual(response.data, [{"code": "1A"}])
+
     def test_get_turn_credentials_v2_builds_optional_query(self):
         captured = {}
 

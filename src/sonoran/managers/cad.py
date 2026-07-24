@@ -201,6 +201,9 @@ class CADManager(object):
     def banUserV2(self, data):
         return self._execute_cad_v2_request("POST", "v2/general/account-bans", body=self._normalize_v2_target_aliases(dict(data)))
 
+    def getPenalCodesV2(self):
+        return self._execute_cad_v2_request("GET", "v2/general/penal-codes")
+
     def setPenalCodesV2(self, codes):
         return self._execute_cad_v2_request("PUT", "v2/general/penal-codes", body={"codes": list(codes)})
 

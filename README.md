@@ -40,6 +40,12 @@ else:
 ```
 
 ```python
+penal_codes = instance.cad.getPenalCodesV2()
+if penal_codes.success:
+    print(penal_codes.data)
+```
+
+```python
 link_response = instance.cad.setCommunityLinkV2(
     {
         "accountUuid": "USER_ACCOUNT_UUID",
