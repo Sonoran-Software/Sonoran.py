@@ -394,10 +394,21 @@ class CADManager(object):
         self._assert_positive_integer(callId, "callId")
         return self._execute_cad_v2_request("DELETE", "v2/emergency/servers/{0}/calls/911/{1}".format(resolved_server_id, callId))
 
+    def getDispatchTemplatesV2(self, templateId=None):
+        if templateId is not None:
+            self._assert_positive_integer(templateId, "templateId")
+            return self._execute_cad_v2_request("GET", "v2/emergency/dispatch-templates/{0}".format(templateId))
+        return self._execute_cad_v2_request("GET", "v2/emergency/dispatch-templates")
+
     def createDispatchCallV2(self, data):
         payload = self._normalize_v2_target_aliases(dict(data))
         resolved_server_id = self._resolve_cad_server_id(payload.pop("serverId", None))
         return self._execute_cad_v2_request("POST", "v2/emergency/servers/{0}/dispatch-calls".format(resolved_server_id), body=payload)
+
+    def createCustomDispatchCallV2(self, data):
+        payload = self._normalize_v2_target_aliases(dict(data))
+        resolved_server_id = self._resolve_cad_server_id(payload.pop("serverId", None))
+        return self._execute_cad_v2_request("POST", "v2/emergency/servers/{0}/custom-dispatch-calls".format(resolved_server_id), body=payload)
 
     def updateDispatchCallV2(self, callId, data):
         resolved_server_id = self._resolve_cad_server_id(data.get("serverId"))

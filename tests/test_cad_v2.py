@@ -160,6 +160,45 @@ class CADV2Tests(unittest.TestCase):
         )
         self.assertNotIn("serverId", captured["body"])
 
+    def test_get_dispatch_templates_v2_supports_list_and_detail(self):
+        urls = []
+
+        def fake_urlopen(request, timeout):
+            urls.append(request.full_url)
+            return FakeResponse([])
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            self.assertTrue(self.cad.getDispatchTemplatesV2().success)
+            self.assertTrue(self.cad.getDispatchTemplatesV2(3).success)
+
+        self.assertEqual(urls, [
+            "https://api.sonorancad.com/v2/emergency/dispatch-templates",
+            "https://api.sonorancad.com/v2/emergency/dispatch-templates/3",
+        ])
+
+    def test_create_custom_dispatch_call_v2_maps_target_aliases(self):
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["url"] = request.full_url
+            captured["method"] = request.get_method()
+            captured["body"] = json.loads(request.data.decode("utf-8"))
+            return FakeResponse({"callId": 124})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            response = self.cad.createCustomDispatchCallV2({
+                "serverId": 3,
+                "templateId": 4,
+                "values": {"status": "active", "description": "Structure fire"},
+                "apiIds": ["fivem:123"],
+            })
+
+        self.assertTrue(response.success)
+        self.assertEqual(captured["method"], "POST")
+        self.assertEqual(captured["url"], "https://api.sonorancad.com/v2/emergency/servers/3/custom-dispatch-calls")
+        self.assertNotIn("serverId", captured["body"])
+        self.assertEqual(captured["body"]["communityUserIds"], ["fivem:123"])
+
     def test_add_identifiers_to_group_v2_uses_group_name_in_path(self):
         captured = {}
 
