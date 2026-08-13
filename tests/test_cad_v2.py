@@ -519,6 +519,49 @@ class RadioV2Tests(unittest.TestCase):
             "https://api.sonoranradio.com/v2/servers/radio-community/rooms/2/users/user%2F1",
         )
 
+    def test_room_zone_v2_crud_uses_expected_paths(self):
+        captured = []
+        zone = {
+            "points": [{"x": 0, "y": 0}, {"x": 1, "y": 0}, {"x": 1, "y": 1}],
+            "options": {
+                "name": "Test Zone",
+                "minZ": 0,
+                "maxZ": 10,
+                "transmitChannels": [],
+                "scanChannels": [],
+                "acePerms": [],
+            },
+        }
+
+        def fake_urlopen(request, timeout):
+            captured.append(
+                {
+                    "method": request.get_method(),
+                    "url": request.full_url,
+                    "body": json.loads(request.data.decode("utf-8")) if request.data else None,
+                }
+            )
+            return FakeResponse({"roomId": 2, "geoZones": [], "degradeZones": []})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            self.assertTrue(self.radio.getZonesV2().success)
+            self.assertTrue(self.radio.createZoneV2("geo", zone).success)
+            self.assertTrue(self.radio.updateZoneV2("geo", "Test Zone", zone).success)
+            self.assertTrue(self.radio.deleteZoneV2("geo", "Test Zone").success)
+
+        base = "https://api.sonoranradio.com/v2/servers/radio-community/rooms/2/zones"
+        self.assertEqual(
+            [(request["method"], request["url"]) for request in captured],
+            [
+                ("GET", base),
+                ("POST", base + "/geo"),
+                ("PATCH", base + "/geo/Test%20Zone"),
+                ("DELETE", base + "/geo/Test%20Zone"),
+            ],
+        )
+        self.assertEqual(captured[1]["body"]["roomId"], 2)
+        self.assertEqual(captured[1]["body"]["zone"]["options"]["name"], "Test Zone")
+
     def test_set_room_id_updates_room_scoped_radio_v2_paths(self):
         captured = {}
 

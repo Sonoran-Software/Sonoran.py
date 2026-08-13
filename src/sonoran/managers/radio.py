@@ -76,6 +76,61 @@ class RadioManager(object):
         resolved_community_id = self._resolve_radio_community_id(communityId)
         return self._request("GET", "v2/servers/{0}/channels".format(resolved_community_id))
 
+    def getZonesV2(self, communityId=None):
+        resolved_community_id = self._resolve_radio_community_id(communityId)
+        room_id = self._resolve_radio_room_id()
+        return self._request("GET", "v2/servers/{0}/rooms/{1}/zones".format(
+            resolved_community_id,
+            room_id,
+        ))
+
+    def _validate_zone_type(self, zone_type):
+        if zone_type not in ("geo", "degrade"):
+            raise ValueError("zoneType must be either geo or degrade.")
+
+    def createZoneV2(self, zoneType, zone, communityId=None):
+        self._validate_zone_type(zoneType)
+        resolved_community_id = self._resolve_radio_community_id(communityId)
+        room_id = self._resolve_radio_room_id()
+        return self._request(
+            "POST",
+            "v2/servers/{0}/rooms/{1}/zones/{2}".format(resolved_community_id, room_id, zoneType),
+            body={"zone": dict(zone)},
+        )
+
+    def updateZoneV2(self, zoneType, zoneName, zone, communityId=None):
+        self._validate_zone_type(zoneType)
+        if not isinstance(zoneName, str) or not zoneName.strip():
+            raise ValueError("zoneName is required.")
+        resolved_community_id = self._resolve_radio_community_id(communityId)
+        room_id = self._resolve_radio_room_id()
+        return self._request(
+            "PATCH",
+            "v2/servers/{0}/rooms/{1}/zones/{2}/{3}".format(
+                resolved_community_id,
+                room_id,
+                zoneType,
+                urllib.parse.quote(zoneName, safe=""),
+            ),
+            body={"zone": dict(zone)},
+        )
+
+    def deleteZoneV2(self, zoneType, zoneName, communityId=None):
+        self._validate_zone_type(zoneType)
+        if not isinstance(zoneName, str) or not zoneName.strip():
+            raise ValueError("zoneName is required.")
+        resolved_community_id = self._resolve_radio_community_id(communityId)
+        room_id = self._resolve_radio_room_id()
+        return self._request(
+            "DELETE",
+            "v2/servers/{0}/rooms/{1}/zones/{2}/{3}".format(
+                resolved_community_id,
+                room_id,
+                zoneType,
+                urllib.parse.quote(zoneName, safe=""),
+            ),
+        )
+
     def getConnectedUsersV2(self, communityId=None):
         resolved_community_id = self._resolve_radio_community_id(communityId)
         return self._request("GET", "v2/servers/{0}/connected-users".format(resolved_community_id))
