@@ -484,3 +484,49 @@ class CADManager(object):
     def deleteBlipsV2(self, ids, serverId=None):
         resolved_server_id = self._resolve_cad_server_id(serverId)
         return self._execute_cad_v2_request("POST", "v2/emergency/servers/{0}/blips/delete".format(resolved_server_id), body={"ids": list(ids)})
+
+    # Custom integration panel definitions and live runtime state.
+    def getIntegrationPanelsV2(self):
+        return self._execute_cad_v2_request("GET", "v2/integration-panels")
+
+    def getIntegrationPanelV2(self, panelKey):
+        return self._execute_cad_v2_request("GET", "v2/integration-panels/{0}".format(urllib.parse.quote(str(panelKey), safe="")))
+
+    def setIntegrationPanelV2(self, panelKey, definition):
+        return self._execute_cad_v2_request("PUT", "v2/integration-panels/{0}".format(urllib.parse.quote(str(panelKey), safe="")), body={"definition": dict(definition)})
+
+    def deleteIntegrationPanelV2(self, panelKey):
+        return self._execute_cad_v2_request("DELETE", "v2/integration-panels/{0}".format(urllib.parse.quote(str(panelKey), safe="")))
+
+    def setIntegrationPanelStateV2(self, panelKey, instanceKey, state, serverId=None):
+        resolved_server_id = self._resolve_cad_server_id(serverId)
+        return self._execute_cad_v2_request(
+            "PUT",
+            "v2/integration-panels/servers/{0}/panels/{1}/instances/{2}/state".format(
+                resolved_server_id,
+                urllib.parse.quote(str(panelKey), safe=""),
+                urllib.parse.quote(str(instanceKey), safe=""),
+            ),
+            body={"state": dict(state)},
+        )
+
+    def getIntegrationPanelActionsV2(self, panelKey, query=None):
+        options = dict(query or {})
+        resolved_server_id = self._resolve_cad_server_id(options.pop("serverId", None))
+        return self._execute_cad_v2_request(
+            "GET",
+            "v2/integration-panels/servers/{0}/panels/{1}/actions".format(resolved_server_id, urllib.parse.quote(str(panelKey), safe="")),
+            query=options,
+        )
+
+    def acknowledgeIntegrationPanelActionV2(self, panelKey, eventId, data):
+        resolved_server_id = self._resolve_cad_server_id(data.get("serverId"))
+        return self._execute_cad_v2_request(
+            "POST",
+            "v2/integration-panels/servers/{0}/panels/{1}/actions/{2}/ack".format(
+                resolved_server_id,
+                urllib.parse.quote(str(panelKey), safe=""),
+                urllib.parse.quote(str(eventId), safe=""),
+            ),
+            body=self._without_keys(data, "serverId"),
+        )

@@ -94,6 +94,47 @@ class CADV2Tests(unittest.TestCase):
         )
         self.assertEqual(response.data, [{"code": "1A"}])
 
+    def test_integration_panel_v2_methods_map_all_routes(self):
+        captured = []
+
+        def fake_urlopen(request, timeout):
+            captured.append(
+                {
+                    "method": request.get_method(),
+                    "url": request.full_url,
+                    "body": json.loads(request.data.decode("utf-8")) if request.data else None,
+                }
+            )
+            return FakeResponse({"ok": True})
+
+        definition = {"schemaVersion": 1, "name": "Door Locks", "body": []}
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            self.cad.getIntegrationPanelsV2()
+            self.cad.getIntegrationPanelV2("doors/main")
+            self.cad.setIntegrationPanelV2("doors", definition)
+            self.cad.deleteIntegrationPanelV2("doors")
+            self.cad.setIntegrationPanelStateV2("doors", "mission-row", {"locked": True}, 11)
+            self.cad.getIntegrationPanelActionsV2("doors", {"serverId": 11, "after": 42, "limit": 25})
+            self.cad.acknowledgeIntegrationPanelActionV2(
+                "doors", "event/1", {"serverId": 11, "success": True, "message": "Locked", "result": {"locked": True}}
+            )
+
+        self.assertEqual(
+            [(item["method"], item["url"]) for item in captured],
+            [
+                ("GET", "https://api.sonorancad.com/v2/integration-panels"),
+                ("GET", "https://api.sonorancad.com/v2/integration-panels/doors%2Fmain"),
+                ("PUT", "https://api.sonorancad.com/v2/integration-panels/doors"),
+                ("DELETE", "https://api.sonorancad.com/v2/integration-panels/doors"),
+                ("PUT", "https://api.sonorancad.com/v2/integration-panels/servers/11/panels/doors/instances/mission-row/state"),
+                ("GET", "https://api.sonorancad.com/v2/integration-panels/servers/11/panels/doors/actions?after=42&limit=25"),
+                ("POST", "https://api.sonorancad.com/v2/integration-panels/servers/11/panels/doors/actions/event%2F1/ack"),
+            ],
+        )
+        self.assertEqual(captured[2]["body"], {"definition": definition})
+        self.assertEqual(captured[4]["body"], {"state": {"locked": True}})
+        self.assertEqual(captured[6]["body"], {"success": True, "message": "Locked", "result": {"locked": True}})
+
     def test_get_turn_credentials_v2_builds_optional_query(self):
         captured = {}
 
