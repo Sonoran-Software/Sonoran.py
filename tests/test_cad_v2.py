@@ -94,6 +94,31 @@ class CADV2Tests(unittest.TestCase):
         )
         self.assertEqual(response.data, [{"code": "1A"}])
 
+    def test_get_database_sync_configuration_v2_uses_general_route(self):
+        captured = {}
+        payload = {
+            "enabled": True,
+            "character": True,
+            "licenses": False,
+            "vehicleRegistrations": True,
+        }
+
+        def fake_urlopen(request, timeout):
+            captured["url"] = request.full_url
+            captured["method"] = request.get_method()
+            return FakeResponse(payload)
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            response = self.cad.getDatabaseSyncConfigurationV2()
+
+        self.assertTrue(response.success)
+        self.assertEqual(captured["method"], "GET")
+        self.assertEqual(
+            captured["url"],
+            "https://api.sonorancad.com/v2/general/database-sync",
+        )
+        self.assertEqual(response.data, payload)
+
     def test_integration_panel_v2_methods_map_all_routes(self):
         captured = []
 

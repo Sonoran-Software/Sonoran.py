@@ -204,6 +204,9 @@ class CADManager(object):
     def getPenalCodesV2(self):
         return self._execute_cad_v2_request("GET", "v2/general/penal-codes")
 
+    def getDatabaseSyncConfigurationV2(self):
+        return self._execute_cad_v2_request("GET", "v2/general/database-sync")
+
     def setPenalCodesV2(self, codes):
         return self._execute_cad_v2_request("PUT", "v2/general/penal-codes", body={"codes": list(codes)})
 
