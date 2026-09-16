@@ -107,3 +107,17 @@ radio.setRoomId(1)
 - CAD v2 requests automatically retry `429` responses up to 2 times and respect `Retry-After` when it is provided.
 - Account-targeted CAD v2 helpers accept `accountUuid`, `communityUserId`, `roblox`, `discord`, and legacy `apiId` where supported by the backend.
 - The import package remains `sonoran`.
+
+## Granular CAD permissions (v2)
+
+Use `getPermissionCatalogV2`, `getAccountPermissionsV2`, and `replaceAccountPermissionsV2` for new permission integrations. The existing `setAccountPermissionsV2` remains a legacy category adapter.
+
+```python
+catalog = instance.cad.getPermissionCatalogV2()
+account = instance.cad.getAccountPermissionsV2(account_uuid)
+response = instance.cad.replaceAccountPermissionsV2(account_uuid, ["global.police"])
+# Clear all grants explicitly:
+cleared = instance.cad.replaceAccountPermissionsV2(account_uuid, [])
+```
+
+Use the account UUID, not a community user ID, in these calls. Fetch the community catalog for exact, case-sensitive grant IDs and template IDs; `legacyGrants` maps uppercase legacy flags to current grants. Replacement overwrites the full grant list (version 2), and an empty list clears it. Never treat a failed read as an empty list. Only pending or active non-owner accounts can be edited. Nonempty grants activate pending accounts subject to the member limit; empty grants make active accounts pending. A granular save ends legacy category inheritance for future record templates.

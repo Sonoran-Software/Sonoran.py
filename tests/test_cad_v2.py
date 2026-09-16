@@ -31,6 +31,29 @@ class FakeResponse(object):
 
 
 class CADV2Tests(unittest.TestCase):
+    def test_granular_permissions_routes_and_replacement(self):
+        captured = []
+
+        def fake_urlopen(request, timeout):
+            captured.append((request.get_method(), request.full_url,
+                             json.loads(request.data) if request.data else None))
+            self.assertEqual(request.get_header("Authorization"), "Bearer test-key")
+            return FakeResponse({"version": 2})
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            self.assertTrue(self.cad.getPermissionCatalogV2().success)
+            self.assertTrue(self.cad.getAccountPermissionsV2("account/uuid").success)
+            self.assertTrue(self.cad.replaceAccountPermissionsV2("account-uuid", ["global.police"]).success)
+            self.assertTrue(self.cad.replaceAccountPermissionsV2("account-uuid", []).success)
+
+        base = "https://api.sonorancad.com/v2/general/permissions/"
+        self.assertEqual(captured, [
+            ("GET", base + "catalog", None),
+            ("GET", base + "accounts/account%2Fuuid", None),
+            ("PUT", base + "accounts/account-uuid", {"version": 2, "grants": ["global.police"]}),
+            ("PUT", base + "accounts/account-uuid", {"version": 2, "grants": []}),
+        ])
+
     def setUp(self):
         self.instance = Instance(
             apiKey="test-key",

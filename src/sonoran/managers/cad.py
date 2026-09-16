@@ -257,6 +257,16 @@ class CADManager(object):
     def setCommunityLinkV2(self, data):
         return self._execute_cad_v2_request("POST", "v2/general/links/set", body=dict(data))
 
+    def getPermissionCatalogV2(self):
+        return self._execute_cad_v2_request("GET", "v2/general/permissions/catalog")
+
+    def getAccountPermissionsV2(self, account_uuid):
+        return self._execute_cad_v2_request("GET", "v2/general/permissions/accounts/" + urllib.parse.quote(str(account_uuid), safe=""))
+
+    def replaceAccountPermissionsV2(self, account_uuid, grants):
+        """Replace every explicit grant; an empty list clears permissions."""
+        return self._execute_cad_v2_request("PUT", "v2/general/permissions/accounts/" + urllib.parse.quote(str(account_uuid), safe=""), body={"version": 2, "grants": list(grants)})
+
     def setAccountPermissionsV2(self, data):
         return self._execute_cad_v2_request("PATCH", "v2/general/accounts/permissions", body=self._normalize_v2_target_aliases(dict(data)))
 
