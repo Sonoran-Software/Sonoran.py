@@ -121,3 +121,14 @@ cleared = instance.cad.replaceAccountPermissionsV2(account_uuid, [])
 ```
 
 Use the account UUID, not a community user ID, in these calls. Fetch the community catalog for exact, case-sensitive grant IDs and template IDs; `legacyGrants` maps uppercase legacy flags to current grants. Replacement overwrites the full grant list (version 2), and an empty list clears it. Never treat a failed read as an empty list. Only pending or active non-owner accounts can be edited. Nonempty grants activate pending accounts subject to the member limit; empty grants make active accounts pending. A granular save ends legacy category inheritance for future record templates.
+
+### Full and selected-field editing
+
+Discover support from `getPermissionCatalogV2()`: use `record.<templateId>.edit.selected` only when that exact grant is returned. It requires the updated CAD backend and may not yet be available during rollout. No SDK method or permission-document version change is required.
+
+- `edit.own`: full editing of records owned by the account.
+- `edit.any`: full editing of anyone's records, including the account's own records; field opt-in does not limit this grant on the updated backend.
+- `edit.selected`: editing only fields marked **Allow limited editing** (`editableByOthers: true`) on another account's records. It does not include `edit.own` or `edit.any`.
+- `supervise`: an additional requirement for supervisor-only fields; it does not grant editing by itself or bypass limited-field opt-in. Read-only fields remain locked for account editing.
+
+Existing grants and field settings are preserved, and the new grant is not automatically assigned. For limited access, remove that template's `edit.any` grant from every source and assign `edit.selected` instead; optionally retain `edit.own`. Permissions from keys or role mappings may combine, and any remaining `edit.any` grants full editing. Fetch the account first and preserve unrelated grants when replacing its complete permission set. Never treat a failed read as an empty grant list. Community API-key record operations retain their existing service authority; these grants govern community accounts.

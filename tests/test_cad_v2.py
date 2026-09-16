@@ -54,6 +54,15 @@ class CADV2Tests(unittest.TestCase):
             ("PUT", base + "accounts/account-uuid", {"version": 2, "grants": []}),
         ])
 
+    def test_selected_field_grants_are_forwarded_without_broadening(self):
+        captured = []
+        def fake_urlopen(request, timeout):
+            captured.append(json.loads(request.data))
+            return FakeResponse({"version": 2})
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            self.assertTrue(self.cad.replaceAccountPermissionsV2("account-uuid", ["record.4.read", "record.4.edit.selected"]).success)
+        self.assertEqual(captured, [{"version": 2, "grants": ["record.4.read", "record.4.edit.selected"]}])
+
     def setUp(self):
         self.instance = Instance(
             apiKey="test-key",
