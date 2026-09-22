@@ -280,6 +280,17 @@ class CADManager(object):
     def getTurnCredentialsV2(self, query=None):
         return self._execute_cad_v2_request("GET", "v2/general/turn", query=dict(query or {}))
 
+    def getFiveMConfigurationV2(self, serverId=None):
+        """Fetch resolved FiveM settings for the explicit or configured server."""
+        server_id = self._resolve_cad_server_id(serverId)
+        return self._execute_cad_v2_request("GET", "v2/fivem/servers/{0}/configuration".format(server_id))
+
+    def acknowledgeFiveMConfigurationV2(self, serverId, revision):
+        """Report a loaded saved revision. A stale revision returns a conflict."""
+        server_id = self._resolve_cad_server_id(serverId)
+        self._assert_positive_integer(revision, "revision")
+        return self._execute_cad_v2_request("POST", "v2/fivem/servers/{0}/configuration/acknowledge/{1}".format(server_id, revision))
+
     def getServersV2(self):
         return self._execute_cad_v2_request("GET", "v2/general/servers")
 

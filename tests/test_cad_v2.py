@@ -31,6 +31,27 @@ class FakeResponse(object):
 
 
 class CADV2Tests(unittest.TestCase):
+    def test_fivem_configuration_routes_and_conflict(self):
+        captured = []
+        def fake_urlopen(request, timeout):
+            captured.append((request.get_method(), request.full_url, request.data))
+            self.assertEqual(request.get_header("Authorization"), "Bearer test-key")
+            return FakeResponse({"revision": 4, "values": {"core": {}, "plugins": {}}})
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            self.assertEqual(self.cad.getFiveMConfigurationV2().data["revision"], 4)
+            self.cad.getFiveMConfigurationV2(2)
+            self.cad.acknowledgeFiveMConfigurationV2(None, 4)
+        base = "https://api.sonorancad.com/v2/fivem/servers/"
+        self.assertEqual(captured, [("GET", base + "7/configuration", None),
+                                   ("GET", base + "2/configuration", None),
+                                   ("POST", base + "7/configuration/acknowledge/4", None)])
+        conflict = urllib.error.HTTPError(base, 409, "Conflict", {},
+                    io.BytesIO(b'{"title":"Revision changed","detail":"Configuration changed after startup."}'))
+        with patch("urllib.request.urlopen", side_effect=conflict):
+            self.assertFalse(self.cad.acknowledgeFiveMConfigurationV2(7, 4).success)
+        with self.assertRaises(ValueError):
+            self.cad.acknowledgeFiveMConfigurationV2(7, 0)
+
     def test_granular_permissions_routes_and_replacement(self):
         captured = []
 
