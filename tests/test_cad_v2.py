@@ -31,6 +31,15 @@ class FakeResponse(object):
 
 
 class CADV2Tests(unittest.TestCase):
+    def test_send_file_batch_preserves_urls_and_type(self):
+        payload = {"communityUserId": "player-1234", "urls": ["https://cdn.example/a", "https://cdn.example/b"], "fileType": "pdf"}
+        def fake_urlopen(request, timeout):
+            self.assertEqual(request.full_url, "https://api.sonorancad.com/v2/general/photos")
+            self.assertEqual(json.loads(request.data), payload)
+            return FakeResponse({"delivered": 1, "files": 2})
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            self.assertTrue(self.cad.sendPhotoV2(payload).success)
+
     def test_fivem_configuration_routes_and_conflict(self):
         captured = []
         def fake_urlopen(request, timeout):
