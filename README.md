@@ -17,7 +17,6 @@ from sonoran import Instance, productEnums
 
 instance = Instance(
     apiKey="YOUR_API_KEY",
-    communityId="YOUR_COMMUNITY_ID",
     product=productEnums.CAD,
     serverId=1,
 )
@@ -87,6 +86,7 @@ with open("bodycam-clip.webm", "rb") as clip:
 
 ## Notes
 
+- For authenticated CAD v2 requests, set `apiKey` with `product=productEnums.CAD`, or use `cadApiKey`. For public `getLoginPageV2()` lookups, pass a URL or a community ID. An optional `communityId` on the client can supply the default ID.
 - CAD and Radio v2 helpers are included right now.
 - Helper names match `Sonoran.js`.
 - Radio v2 clients use `communityId` for `/v2/servers/{communityId}` routes and `roomId` on client creation for room-scoped helpers:

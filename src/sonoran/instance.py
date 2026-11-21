@@ -37,13 +37,13 @@ class Instance(object):
         self.cms = None
         self.radio = None
 
-        if "apiKey" in merged and "communityId" in merged:
+        if "apiKey" in merged and (merged.get("product") == productEnums.CAD or "communityId" in merged):
             product = merged.get("product")
             if product is None:
                 raise ValueError("No product enum given when instancing.")
 
             if product == productEnums.CAD:
-                self.cadCommunityId = merged["communityId"]
+                self.cadCommunityId = merged.get("communityId")
                 self.cadApiKey = merged["apiKey"]
                 if merged.get("serverId") is not None:
                     self.cadDefaultServerId = int(merged["serverId"])
@@ -82,7 +82,7 @@ class Instance(object):
         self._initialize()
 
     def _initialize(self):
-        if self.cadCommunityId and self.cadApiKey and self.cadApiUrl:
+        if self.cadApiKey and self.cadApiUrl:
             self.cad = CADManager(self)
             self.isCADSuccessful = True
         if self.cmsCommunityId and self.cmsApiKey and self.cmsApiUrl:

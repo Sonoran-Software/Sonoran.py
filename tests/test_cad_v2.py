@@ -96,12 +96,24 @@ class CADV2Tests(unittest.TestCase):
     def setUp(self):
         self.instance = Instance(
             apiKey="test-key",
-            communityId="test-community",
             product=productEnums.CAD,
             serverId=7,
         )
         self.assertIsNotNone(self.instance.cad)
         self.cad = self.instance.cad
+
+    def test_cad_accepts_product_specific_api_key(self):
+        instance = Instance(cadApiKey="test-key", cadDefaultServerId=7)
+        self.assertTrue(instance.isCADSuccessful)
+        self.assertEqual(instance.cadDefaultServerId, 7)
+
+    def test_cad_still_accepts_a_community_id_as_a_login_page_default(self):
+        instance = Instance(product=productEnums.CAD, apiKey="test-key", communityId="test-community")
+        with patch("urllib.request.urlopen", return_value=FakeResponse()) as urlopen:
+            self.assertTrue(instance.cad.getLoginPageV2().success)
+        request = urlopen.call_args[0][0]
+        self.assertEqual(request.full_url, "https://api.sonorancad.com/v2/general/login-page?communityId=test-community")
+        self.assertIsNone(request.get_header("Authorization"))
 
     def test_get_login_page_v2_uses_public_request(self):
         captured = {}
